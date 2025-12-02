@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
     Position pos;
-    char direction; // N, S, E, W
+    int direction; // N, S, E, W
 } Robot;
 
 typedef struct {

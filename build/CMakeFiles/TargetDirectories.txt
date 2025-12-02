@@ -1,0 +1,3 @@
+/home/bryan/Documents/projects/intro_to_programming_y1_t1/build/CMakeFiles/Game.dir
+/home/bryan/Documents/projects/intro_to_programming_y1_t1/build/CMakeFiles/edit_cache.dir
+/home/bryan/Documents/projects/intro_to_programming_y1_t1/build/CMakeFiles/rebuild_cache.dir

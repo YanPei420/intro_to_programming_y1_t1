@@ -1,7 +1,7 @@
 #include <ncurses.h> // Make sure this is correct for your OS
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #define BOARD_ROWS 20 // You are free to change this
@@ -24,7 +24,7 @@ typedef struct {
 
 typedef struct {
     Position pos;
-    char direction;  // N, S, E, W
+    int direction; // N, S, E, W
 } Robot;
 
 typedef struct {
@@ -44,19 +44,19 @@ typedef struct {
 // Other structs you could add such as Leaderboard, Game Settings, etc.
 
 // Function prototypes, change as you see fit
-WINDOW* init_game(Player player, Robot robot, Position person, Position *mines, int mine_count);  
+WINDOW* init_game(Player player, Robot robot, Position person, Position* mines, int mine_count);
 void draw_title_screen(void);
-void update_UI(Player player, Robot robot, Position person, Position *mines, int mine_count);
-void handle_input(Robot *robot, int input, Position *person, Position *mines, int mine_count);
-void move_robot(Robot *robot, Position *person);
-void move_robot_ai(Robot *robot, Position *person, Position *mines, int mine_count);
-void clear_robot(Robot *robot);
-void draw_robot(Robot *robot);
-void check_collision(Robot *robot, Position *mines, int mine_count);
-void spawn_person(Position *person, Robot *robot, Position *mines, int mine_count);
-void spawn_mines(Position *mines, int *mine_count, Robot *robot, Position *person);
-void game_over_screen(Player *player);
-void save_score(Player *player);
+void update_UI(Player player, Robot robot, Position person, Position* mines, int mine_count);
+void handle_input(Robot* robot, int input, Position* person, Position* mines, int mine_count);
+void move_robot(Robot* robot, Position* person);
+void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_count);
+void clear_robot(Robot* robot);
+void draw_robot(Robot* robot);
+void check_collision(Robot* robot, Position* mines, int mine_count);
+void spawn_person(Position* person, Robot* robot, Position* mines, int mine_count);
+void spawn_mines(Position* mines, int* mine_count, Robot* robot, Position* person);
+void game_over_screen(Player* player);
+void save_score(Player* player);
 void show_leaderboard(void);
 void draw_obstacle(CrossObstacle* obstacle);
 bool is_obstacle_position(CrossObstacle* obstacle, int x, int y);
@@ -71,16 +71,16 @@ int main() {
     srand(time(NULL));
     nodelay(stdscr, TRUE); // This call makes getch() non-blocking, you may need to change this
 
-    // Initialize game variables 
+    // Initialize game variables
     // TODO use DMA to allocate memory for these
-    Player player = {.lives = 3, .score = 0, .level = 1};
-    Robot robot = {.pos = {0, 0}, .direction = 'N'};
-    Position person = {0, 0};
-    Position mines[50];  // Maximum 50 mines
+    Player player   = { .lives = 3, .score = 0, .level = 1 };
+    Robot robot     = { .pos = { 0, 0 }, .direction = 'N' };
+    Position person = { 0, 0 };
+    Position mines[50]; // Maximum 50 mines
     int mine_count = 0;
-    int delay = 10000;
+    int delay      = 10000;
 
-    //dma allocation for initialising game variable
+    // dma allocation for initialising game variable
 
 
     // TODO: Show title screen and get player name
@@ -89,15 +89,13 @@ int main() {
     update_UI(player, robot, person, mines, mine_count);
 
     // TODO: Game loop
-    while (true) { 
+    while (true) {
         // Handle input
         int ch = getch();
         handle_input(&robot, ch, &person, mines, mine_count);
 
         // TODO: Game logic
         // Most of your implementation will go here
-
-
 
 
         // Delay in microseconds
@@ -107,30 +105,29 @@ int main() {
     // Wait for user input before exiting
     nodelay(stdscr, FALSE); // Make getch() blocking
     getch();
-    
+
     // Cleanup and exit
     endwin();
     return 0;
 }
 
-// Dummy function 
+// Dummy function
 void draw_title_screen() {
     // TODO: Implement title screen with instructions
     // Add a starting screen before the box is drawn [1 mark]
     // A dummy draw_title_screen() function has been provided for you
     // Add some game instructions to the starting screen
-    // Ask the user to input their name 
+    // Ask the user to input their name
     // Save this in a struct to track the user’s name, current score and lives remaining
-    // You could earn marks for creativity here 
-
+    // You could earn marks for creativity here
 }
 
 // Basic border drawing function provided, change as you see fit
-WINDOW* init_game(Player player, Robot robot, Position person, Position *mines, int mine_count) {
+WINDOW* init_game(Player player, Robot robot, Position person, Position* mines, int mine_count) {
     // Initialize the board
     int ymax, xmax;
     getmaxyx(stdscr, ymax, xmax);
-    WINDOW* board = newwin(BOARD_ROWS, BOARD_COLS, (ymax-BOARD_ROWS)/2, (xmax-BOARD_COLS)/2);
+    WINDOW* board = newwin(BOARD_ROWS, BOARD_COLS, (ymax - BOARD_ROWS) / 2, (xmax - BOARD_COLS) / 2);
     box(board, 0, 0);
     refresh();
     wrefresh(board);
@@ -140,7 +137,7 @@ WINDOW* init_game(Player player, Robot robot, Position person, Position *mines, 
 }
 
 // Students to change as they see fit
-void update_UI(Player player, Robot robot, Position person, Position *mines, int mine_count) {
+void update_UI(Player player, Robot robot, Position person, Position* mines, int mine_count) {
     mvwprintw(stdscr, 1, 1, "Player: %s", player.name);
     mvwprintw(stdscr, 1, 11, "Lives: %d", player.lives);
     mvwprintw(stdscr, 1, 20, "Score: %d", player.score);
@@ -149,69 +146,69 @@ void update_UI(Player player, Robot robot, Position person, Position *mines, int
 }
 
 // Students to implement
-void handle_input(Robot *robot, int input, Position *person, Position *mines, int mine_count) {
+void handle_input(Robot* robot, int input, Position* person, Position* mines, int mine_count) {
     // TODO: Handle arrow key inputs
-    switch(input) {
-        case KEY_UP:
-            //Students to implement
-            break;
-        case KEY_DOWN:
-            //Students to implement
-            break;
-        case KEY_LEFT:
-            //Students to implement
-            break;
-        case KEY_RIGHT:
-            //Students to implement
-            break;
-        default:
-            // Auto movement if no key pressed
-            move_robot_ai(robot, person, mines, mine_count);
+    switch (input) {
+    case KEY_UP:
+        // Students to implement
+        break;
+    case KEY_DOWN:
+        // Students to implement
+        break;
+    case KEY_LEFT:
+        // Students to implement
+        break;
+    case KEY_RIGHT:
+        // Students to implement
+        break;
+    default:
+        // Auto movement if no key pressed
+        move_robot_ai(robot, person, mines, mine_count);
     }
 }
 
 // Students to implement
-void move_robot(Robot *robot, Position *person) {
+void move_robot(Robot* robot, Position* person) {
     // TODO: Move robot based on current direction这个link一下x and y then change position based on user input
 }
 
 // Students to implement
-void move_robot_ai(Robot *robot, Position *person, Position *mines, int mine_count) {
+void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_count) {
     // TODO: Implement AI movement towards person while avoiding mines
 }
 
 // Students to implement
-void clear_robot(Robot *robot) {
+void clear_robot(Robot* robot) {
     // TODO: Clear robot's current position
 }
 
 // Students to implement
-void draw_robot(Robot *robot) {
+void draw_robot(Robot* robot) {
     // TODO: Draw robot at new position
 }
 
 // Students to implement
-void check_collision(Robot *robot, Position *mines, int mine_count) {
+void check_collision(Robot* robot, Position* mines, int mine_count) {
     // TODO: Check for collisions with walls and mines
 }
 
 // Students to implement
-void spawn_person(Position *person, Robot *robot, Position *mines, int mine_count) {
+void spawn_person(Position* person, Robot* robot, Position* mines, int mine_count) {
     // TODO: Spawn person at random location这个就用那个random for x y and then use if to check if it's at a wall or mine, if yes then redo
 }
 
 // Students to implement
-void spawn_mines(Position *mines, int *mine_count, Robot *robot, Position *person) {
+void spawn_mines(Position* mines, int* mine_count, Robot* robot, Position* person) {
     // TODO: Spawn new mines for each level 又是用random加2个
 }
 
 // Students to implement
-void game_over_screen(Player *player) {
+void game_over_screen(Player* player) {
     // TODO: Show game over screen with final score
 }
 
 // Students to implement
-void save_score(Player *player) {
+void save_score(Player* player) {
     // TODO: Save score to leaderboard.txt
 }
 

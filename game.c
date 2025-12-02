@@ -7,6 +7,33 @@
 
 #include "common.h"
 
+// Function prototypes
+WINDOW* init_game(Game* game);
+void draw_title_screen(Player* player);
+void update_UI(Player* player, Robot* robot, Position* person, Position* mines, int mine_count, Game* game);
+void handle_input(Robot* robot, int input, Position* person, Position* mines, int* mine_count, Game* game, CrossObstacle* obstacle);
+void move_robot(Robot* robot, Position* person);
+void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_count, CrossObstacle* obstacle);
+bool collides_at(int x, int y, Position* mines, int mine_count, CrossObstacle* obstacle);
+void clear_robot(Game* game, Robot* robot);
+void draw_robot(Game* game, Robot* robot);
+bool check_collision(Game* game, Player* player, Robot* robot, Position* mines, int* mine_count, CrossObstacle* obstacle, Position* person);
+void draw_person(Game* game, Position* person, Robot* robot, CrossObstacle* obstacle);
+void spawn_mines_initial(Position* mines, int* mine_count, Robot* robot, Position* person, Game* game);
+void spawn_mines_additional(Position* mines, int* mine_count, Robot* robot, Position* person, Game* game);
+void power_ups(Player* player, Position* power_up, Robot* robot, Position* person, Position* mines, int* mine_count);
+void game_over_screen(Player* player);
+void save_score(Player* player);
+void show_leaderboard(void);
+void draw_obstacle(CrossObstacle* obstacle);
+void draw_border(Game* game);
+void draw_person(Game* game, Position* person, Robot* robot, CrossObstacle* obstacle);
+bool is_obstacle_position(CrossObstacle* obstacle, int x, int y);
+void activate_power_up(void);
+void deactivate_power_up(void);
+void clear_person(Game* game, Position* person);
+void reset_game(Game* game, Player* player, Robot* robot, Position* person, Position* mines, int* mine_count, CrossObstacle* obstacle);
+
 void draw_title_screen(Player* player) {
     if (player == NULL) return;
 
@@ -34,54 +61,35 @@ void handle_input(Robot* robot, int input, Position* person, Position* mines, in
     // TODO: Handle arrow key inputs
     switch (input) {
     case KEY_UP:
-        robot->direction = 'N';
-        if (robot->pos.y > 0)
-            robot->pos.y--;
-        break;
     case KEY_DOWN:
-        robot->direction = 'S';
-        if (robot->pos.y < BOARD_ROWS - 1)
-            robot->pos.y++;
-        break;
     case KEY_LEFT:
-        robot->direction = 'W';
-        if (robot->pos.x > 0)
-            robot->pos.x--;
-        break;
     case KEY_RIGHT:
-        robot->direction = 'E';
-        if (robot->pos.x < BOARD_COLS - 1)
-            robot->pos.x++;
-        break;
-    default:
-        // Auto movement if no key pressed
-        move_robot_ai(robot, person, mines, *mine_count, obstacle);
+        robot->direction = input;
     }
 }
 
 // Students to implement
-void move_robot(Robot* robot, Position* person, int input) {
-    if (robot == NULL || person == NULL) {
-        return;
-    }
-    switch (input) {
+void move_robot(Robot* robot, Position* person) {
+    if (robot == NULL || person == NULL) return;
+
+    switch (robot->direction) {
     case KEY_UP:
-        robot->direction = 'N';
+        robot->direction = KEY_UP;
         if (robot->pos.y > 0)
             robot->pos.y--;
         break;
     case KEY_DOWN:
-        robot->direction = 'S';
+        robot->direction = KEY_DOWN;
         if (robot->pos.y < BOARD_ROWS - 1)
             robot->pos.y++;
         break;
     case KEY_LEFT:
-        robot->direction = 'W';
+        robot->direction = KEY_LEFT;
         if (robot->pos.x > 0)
             robot->pos.x--;
         break;
     case KEY_RIGHT:
-        robot->direction = 'E';
+        robot->direction = KEY_RIGHT;
         if (robot->pos.x < BOARD_COLS - 1)
             robot->pos.x++;
         break;
@@ -137,7 +145,7 @@ void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_cou
         // blocked, try next direction
     } else {
         robot->pos.y     = ny;
-        robot->direction = 'N';
+        robot->direction = KEY_UP;
         return;
     }
 
@@ -148,7 +156,7 @@ void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_cou
         // blocked, try next direction
     } else {
         robot->pos.x     = nx;
-        robot->direction = 'E';
+        robot->direction = KEY_RIGHT;
         return;
     }
 
@@ -159,7 +167,7 @@ void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_cou
         // blocked, try next direction
     } else {
         robot->pos.y     = ny;
-        robot->direction = 'S';
+        robot->direction = KEY_DOWN;
         return;
     }
 
@@ -171,7 +179,7 @@ void move_robot_ai(Robot* robot, Position* person, Position* mines, int mine_cou
         return;
     } else {
         robot->pos.x     = nx;
-        robot->direction = 'W';
+        robot->direction = KEY_LEFT;
         return;
     }
 }
@@ -195,6 +203,7 @@ bool collides_at(int x, int y, Position* mines, int mine_count, CrossObstacle* o
     }
     return false; // no collision
 }
+
 // Students to implement
 void clear_robot(Game* game, Robot* robot) {
     // check if memory allocation is successful
@@ -213,16 +222,16 @@ void clear_robot(Game* game, Robot* robot) {
 
     // finding head position
     switch (robot->direction) {
-    case 'N':
+    case KEY_UP:
         robot_y--; // head above body
         break;
-    case 'S':
+    case KEY_DOWN:
         robot_y++; // head below body
         break;
-    case 'E':
+    case KEY_RIGHT:
         robot_x++; // head to the right of body
         break;
-    case 'W':
+    case KEY_LEFT:
         robot_x--; // head to the left of body
         break;
     default:
@@ -241,6 +250,9 @@ void draw_robot(Game* game, Robot* robot) {
         return;
     }
 
+    robot->pos.x += game->field.start.x;
+    robot->pos.y += game->field.start.y;
+
     // add colour
     if (has_colors()) {
         wattron(game->field.window, COLOR_PAIR(1)); // robot colour
@@ -250,16 +262,16 @@ void draw_robot(Game* game, Robot* robot) {
     // draw head based on direction
     chtype head_ch = '^'; //
     switch (robot->direction) {
-    case 'N':
+    case KEY_UP:
         mvwaddch(game->field.window, robot->pos.y - 1, robot->pos.x, '^'); // head above body
         break;
-    case 'S':
+    case KEY_DOWN:
         mvwaddch(game->field.window, robot->pos.y + 1, robot->pos.x, 'v'); // head below body
         break;
-    case 'E':
+    case KEY_RIGHT:
         mvwaddch(game->field.window, robot->pos.y, robot->pos.x + 1, '>'); // head to the right of body
         break;
-    case 'W':
+    case KEY_LEFT:
         mvwaddch(game->field.window, robot->pos.y, robot->pos.x - 1, '<'); // head to the left of body
         break;
     default:
@@ -269,6 +281,8 @@ void draw_robot(Game* game, Robot* robot) {
         wattroff(game->field.window, COLOR_PAIR(1)); // turn off robot colour
     }
     wrefresh(game->field.window);
+    robot->pos.x -= game->field.start.x;
+    robot->pos.y -= game->field.start.y;
 }
 
 bool check_collision(Game* game, Player* player, Robot* robot, Position* mines, int* mine_count, CrossObstacle* obstacle, Position* person) {
@@ -282,16 +296,8 @@ bool check_collision(Game* game, Player* player, Robot* robot, Position* mines, 
     //  Check for collision with walls
     if (robot->pos.x <= 0 || robot->pos.x >= BOARD_COLS - 1 ||
     robot->pos.y <= 0 || robot->pos.y >= BOARD_ROWS - 1) {
-        player->lives--; // lose a life when a wall is hit
-        // reset robot position to starting point (middle left of board)
-        int home_x       = robot->pos.x;
-        int home_y       = robot->pos.y;
-        robot->direction = 'N'; // reset direction to north
+        ret |= true;
     }
-    // display current lives, score and level on the screen
-    update_UI(player, robot, person, mines, *mine_count, game);
-    return ret;
-
     // Check for collision with mines
     for (int i = 0; i < *mine_count; i++) {
         if (robot->pos.x == mines[i].x && robot->pos.y == mines[i].y) {
@@ -299,15 +305,17 @@ bool check_collision(Game* game, Player* player, Robot* robot, Position* mines, 
             // reset robot position to starting point (middle left of board)
             int home_x       = robot->pos.x;
             int home_y       = robot->pos.y;
-            robot->direction = 'N'; // reset direction to north
+            robot->direction = KEY_UP; // reset direction to north
             // remove the mine that was hit
-            ret = true;
-            for (int j = i; j < *mine_count - 1; j++) {
-                mines[j] = mines[j + 1];
+            ret |= true;
+            for (; i < *mine_count - 1; i++) {
+                mines[i] = mines[i + 1];
             }
             (*mine_count)--; // decrease mine count
         }
     }
+
+    ret |= is_obstacle_position(obstacle, robot->pos.x, robot->pos.y);
 
     // Update player stats
     mvprintw(1, 1, "Player: %s", player->name);
@@ -536,50 +544,26 @@ void draw_obstacle(CrossObstacle* obstacle) {
     int starty = (ymax - BOARD_ROWS) / 2;
     int startx = (xmax - BOARD_COLS) / 2;
 
-    int width    = obstacle->width;
-    int height   = obstacle->height;
     int center_x = obstacle->center_x;
     int center_y = obstacle->center_y;
 
     int west  = center_x - W / 2;
-    int east  = center_x + W - 1; //-1 to account for 0 indexing
+    int east  = center_x + W / 2; //-1 to account for 0 indexing
     int north = center_y - H / 2;
-    int south = center_y + H - 1; //-1 to account for 0 indexing
+    int south = center_y + H / 2; //-1 to account for 0 indexing
     // add colours
     init_pair(3, COLOR_YELLOW, COLOR_BLACK);
     // Draw horizontal part
     for (int x = west; x <= east; x++) {
-        // check board limits
-        if (x < 0 || x >= BOARD_COLS) {
-            continue;
-        }
-
         int sx = startx + x;
         int sy = starty + center_y;
-
-        if (sx < 0 || sx >= BOARD_COLS || sy < 0 || sy >= BOARD_ROWS) {
-            continue;
-        }
-
         mvaddch(sy, sx, OBSTACLE);
-        refresh();
     }
     // draw vertical part
     for (int y = north; y <= south; y++) {
-        // check board limits
-        if (y < 0 || y >= BOARD_ROWS) {
-            continue;
-        }
-
         int sx = startx + center_x;
         int sy = starty + y;
-
-        if (sx < 0 || sx >= BOARD_COLS || sy < 0 || sy >= BOARD_ROWS) {
-            continue;
-        }
-
         mvaddch(sy, sx, OBSTACLE);
-        refresh();
     }
     if (has_colors()) {
         attroff(COLOR_PAIR(3)); // turn off obstacle colour
@@ -598,9 +582,9 @@ bool is_obstacle_position(CrossObstacle* obstacle, int x, int y) {
     int center_y = obstacle->center_y;
 
     int west  = center_x - W / 2;
-    int east  = center_x + W - 1; //-1 to account for 0 indexing
+    int east  = center_x + W / 2; //-1 to account for 0 indexing
     int north = center_y - H / 2;
-    int south = center_y + H - 1; //-1 to account for 0 indexing
+    int south = center_y + H / 2; //-1 to account for 0 indexing
 
     // Check horizontal part
     if (y == center_y && x >= west && x <= east) {
@@ -621,14 +605,15 @@ WINDOW* init_game(Game* game) {
     game->field.cols    = BOARD_COLS;
     game->field.start.y = (ymax - BOARD_ROWS) / 2;
     game->field.start.x = (xmax - BOARD_COLS) / 2;
-    game->field.window  = newwin(game->field.rows, game->field.cols, game->field.start.y, game->field.start.x);
+    game->field.window  = initscr();
+    // game->field.window  = newwin(game->field.rows, game->field.cols, game->field.start.y, game->field.start.x);
     if (game->field.window == NULL) {
         endwin();
         fprintf(stderr, "Failed to create game window\n");
         exit(1);
     }
     box(game->field.window, 0, 0); // Draw border
-    wrefresh(game->field.window);
+    refresh();
     return game->field.window;
 }
 // Draw border directly on stdscr using Game.field size
@@ -707,37 +692,27 @@ void power_ups(Player* player, Position* power_up, Robot* robot, Position* perso
 }
 
 void draw_person(Game* game, Position* person, Robot* robot, CrossObstacle* obstacle) {
-    if (game == NULL || game->field.window == NULL || person == NULL) { // check for null pointers
-        return;
-    }
     // add colour
     if (has_colors()) {
         wattron(game->field.window, COLOR_PAIR(2)); // person colour
     }
     // Draw person at random position that's not on robot, obstacle or wall
-    if (person->x > 0 && person->x < game->field.cols - 1 &&
-    person->y > 0 && person->y < game->field.rows - 1) { // checking to see if person is within the borders before trying to draw
-        int obstacle_collision = is_obstacle_position(obstacle, person->x, person->y);
-        if (!obstacle_collision) {                                           // only draw person if not colliding with obstacle
-            while (robot->pos.x == person->x && robot->pos.y == person->y) { // ensure person doesn't spawn on robot
-                person->x = rand() % (game->field.cols - 2) + 1;             // Avoid borders
-                person->y = rand() % (game->field.rows - 2) + 1;             // Avoid borders
-            }
-            mvwaddch(game->field.window, person->y, person->x, PERSON);
-        }
+    // if (person->x > 0 && person->x < game->field.cols - 1 &&
+    // person->y > 0 && person->y < game->field.rows - 1) { // checking to see if person is within the borders before trying to draw
+    // int obstacle_collision = is_obstacle_position(obstacle, person->x, person->y);
+    // if (!obstacle_collision) {                                           // only draw person if not colliding with obstacle
+    // while (robot->pos.x == person->x && robot->pos.y == person->y) { // ensure person doesn't spawn on robot
+    if (person->x == -1) {
+        person->x = rand() % (game->field.cols - 2) + 1; // Avoid borders
+        person->y = rand() % (game->field.rows - 2) + 1; // Avoid borders
     }
+    // }
+    mvwaddch(game->field.window, person->y + game->field.start.y, person->x + game->field.start.x, PERSON);
+    // }
+    // }
     if (has_colors()) {
         wattroff(game->field.window, COLOR_PAIR(2)); // turn off person colour
     }
-    wrefresh(game->field.window);
-}
-
-void clear_person(Game* game, Position* person) {
-    if (game == NULL || game->field.window == NULL || person == NULL) { // check for null pointers
-        return;
-    }
-    // Clear person's current position
-    mvwaddch(game->field.window, person->y, person->x, ' ');
     wrefresh(game->field.window);
 }
 
@@ -758,16 +733,17 @@ void reset_game(Game* game, Player* player, Robot* robot, Position* person, Posi
     int home_y       = 1 + (BOARD_ROWS - 2) / 4; // centre of second quadrent y
     robot->pos.x     = home_x;
     robot->pos.y     = home_y;
-    robot->direction = 'N'; // reset direction to north
+    robot->direction = KEY_UP; // reset direction to north
     draw_robot(game, robot);
 
     // Reset person position
-    clear_person(game, person);
     person->x = rand() % (BOARD_COLS - 2) + 1; // Avoid borders
     person->y = rand() % (BOARD_ROWS - 2) + 1; // Avoid borders
     draw_person(game, person, robot, obstacle);
 
     // drawing cross obstacle in the centre of the board
+    int ymax, xmax;
+    getmaxyx(stdscr, ymax, xmax);
     obstacle->center_x = BOARD_COLS / 2;
     obstacle->center_y = BOARD_ROWS / 2;
     obstacle->width    = 10;
@@ -776,7 +752,6 @@ void reset_game(Game* game, Player* player, Robot* robot, Position* person, Posi
     *mine_count = 0;
     spawn_mines_initial(mines, mine_count, robot, person, game);
 }
-
 
 int main() {
     // Initialize ncurses
@@ -865,7 +840,7 @@ int main() {
     // Set initial robot stats
     robot_ptr->pos.x     = 1 + (BOARD_COLS - 2) / 2; // centre of board
     robot_ptr->pos.y     = 1 + (BOARD_ROWS - 2) / 2; // centre of board
-    robot_ptr->direction = 'N';
+    robot_ptr->direction = KEY_UP;
 
     // Set initial person position
     person_ptr->x = 1;
@@ -876,147 +851,103 @@ int main() {
     memset(&game, 0, sizeof(Game));
 
     int mine_count = 0;
-    int delay      = 10000000;
+    int delay      = 1000000;
 
     // Show title screen and get player name
-    draw_title_screen(player_ptr);
     WINDOW* board = init_game(&game);
+    draw_title_screen(player_ptr);
     update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
 
     // Create the game window and draw the arena
-    init_game(&game);   // sets field size, creates WINDOW, draws box
-    draw_border(&game); // draws the border directly on stdscr too
+    init_game(&game); // sets field size, creates WINDOW, draws box
     mvprintw(1, 2, "Draw Arena. Press any key to quit.");
+    clear();
     refresh();
-    // Wait for a key press, then clean up
-    while (getch() == -1);
+
+    reset_game(&game, player_ptr, robot_ptr, person_ptr, mines, &mine_count, obstacle_ptr);
 
     // Game loop
-    while (true) {
+    while (player_ptr->lives > 0) {
         // Handle input
         int input = getch();
         handle_input(robot_ptr, input, person_ptr, mines, &mine_count, &game, obstacle_ptr);
-
-
-        while (1);
-
         // TODO: Game logic~
         // Most of your implementation will go here
-        reset_game(&game, player_ptr, robot_ptr, person_ptr, mines, &mine_count, obstacle_ptr);
+        clear();
+        draw_border(&game); // draws the border directly on stdscr too
         update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-
-        // Detect if first key is an arrow key for manual mode
-        bool manual_mode = false;
-        timeout(3000);   // wait up to 3000 ms for first input
-        input = getch(); // returns a key
-        timeout(0);      // restore non-blocking
-        if (input != ERR && (input == KEY_UP || input == KEY_DOWN || input == KEY_LEFT || input == KEY_RIGHT)) {
-            manual_mode = true; // arrow key pressed -> manual mode
+        draw_obstacle(obstacle_ptr);
+        for (int i = 0; i < mine_count; i++) {
+            mvprintw(mines[i].y + game.field.start.y,
+            mines[i].x + game.field.start.x,
+            "%c", MINE); //-1 because indexing starts from 0
         }
-        if (input == KEY_UP) {
-            robot_ptr->direction = 'N';
-        } else if (input == KEY_DOWN) {
-            robot_ptr->direction = 'S';
-        } else if (input == KEY_LEFT) {
-            robot_ptr->direction = 'W';
-        } else if (input == KEY_RIGHT) {
-            robot_ptr->direction = 'E';
+
+        // // Clear previous robot position
+        // // Move robot based on mode
+        bool manual_mode;
+        manual_mode = true;
+        if (manual_mode) {
+            move_robot(robot_ptr, person_ptr);
         } else {
-            manual_mode = false; // no arrow key pressed -> AI mode
             move_robot_ai(robot_ptr, person_ptr, mines, mine_count, obstacle_ptr);
         }
-        nodelay(stdscr, TRUE); // ensure non-blocking
+        draw_robot(&game, robot_ptr); // Redraw robot after AI move
 
-        while (player_ptr->lives > 0) {
-            // Clear previous robot position
-            clear_robot(&game, robot_ptr);
-
-            // Move robot based on mode
-            if (manual_mode) {
-                move_robot(robot_ptr, person_ptr, input);
-                draw_robot(&game, robot_ptr); // Redraw robot after manual move
-                update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-
-            } else {
-                move_robot_ai(robot_ptr, person_ptr, mines, mine_count, obstacle_ptr);
-                draw_robot(&game, robot_ptr); // Redraw robot after AI move
-                update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-            }
-
-            // Check for collisions
-            if (check_collision(&game, player_ptr, robot_ptr, mines, &mine_count, obstacle_ptr, person_ptr) == true) {
-                break; // Exit loop if collision results in game over
-                player_ptr->lives--;
-                update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-                reset_game(&game, player_ptr, robot_ptr, person_ptr, mines, &mine_count, obstacle_ptr);
-                // Reset mines
-                for (int i = 0; i < mine_count; i++) {
-                    clear_mines(&game, &mines[i], mine_count);
-                }
-            }
-            // Spawn additional mines and power-ups based on level
-            if (player_ptr->level >= 2) {
-                spawn_mines_additional(mines, &mine_count, robot_ptr, person_ptr, &game);
-            }
-            if (player_ptr->level >= 3) {
-                Position power_up;
-                power_ups(player_ptr, &power_up, robot_ptr, person_ptr, mines, &mine_count);
-            }
-            // level up for every 5 points
-            if (player_ptr->score != 0 && player_ptr->score % 5 == 0) {
-                player_ptr->level = (player_ptr->score / 5) + 1;
-            }
-            // Redraw robot at new position
-            draw_robot(&game, robot_ptr);
-            draw_person(&game, person_ptr, robot_ptr, obstacle_ptr);
-            draw_obstacle(obstacle_ptr);
-            for (int i = 0; i < mine_count; i++) {
-                spawn_mines_initial(&mines[i], &mine_count, robot_ptr, person_ptr, &game);
-                spawn_mines_additional(&mines[i], &mine_count, robot_ptr, person_ptr, &game);
-            }
-
-            // Update UI
-            update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-            // Refresh game window
-            wrefresh(game.field.window);
-            // Small delay to control game speed
-            usleep(delay);
+        // Check for collisions
+        if (check_collision(&game, player_ptr, robot_ptr, mines, &mine_count, obstacle_ptr, person_ptr) == true) {
+            player_ptr->lives--;
+            int home_x       = 1 + (BOARD_COLS - 2) / 4; // centre of second quadrent x
+            int home_y       = 1 + (BOARD_ROWS - 2) / 4; // centre of second quadrent y
+            robot_ptr->pos.x = home_x;
+            robot_ptr->pos.y = home_y;
         }
+        // Spawn additional mines and power-ups based on level
+        if (player_ptr->level >= 2 && player_ptr->score % 5) {
+            spawn_mines_additional(mines, &mine_count, robot_ptr, person_ptr, &game);
+        }
+        // if (player_ptr->level >= 3) {
+        //     Position power_up;
+        //     power_ups(player_ptr, &power_up, robot_ptr, person_ptr, mines, &mine_count);
+        // }
+        // level up for every 5 points
+        if (player_ptr->score != 0 && player_ptr->score % 5 == 0) {
+            player_ptr->level = (player_ptr->score / 5) + 1;
+        }
+        if (person_ptr->x == robot_ptr->pos.x &&
+        person_ptr->y == robot_ptr->pos.y) {
+            player_ptr->score++;
+            person_ptr->x = -1;
+            draw_person(&game, person_ptr, robot_ptr, obstacle_ptr);
+        }
+        // Redraw robot at new position
+        draw_robot(&game, robot_ptr);
+        draw_person(&game, person_ptr, robot_ptr, obstacle_ptr);
+        draw_obstacle(obstacle_ptr);
+        for (int i = 0; i < mine_count; i++) {
+            spawn_mines_initial(&mines[i], &mine_count, robot_ptr, person_ptr, &game);
+            // spawn_mines_additional(&mines[i], &mine_count, robot_ptr, person_ptr, &game);
+        }
+        usleep(delay / 10);
+
         // Check for game over
         if (player_ptr->lives <= 0) {
             game_over_screen(player_ptr);
             save_score(player_ptr);
             show_leaderboard();
-            reset_game(&game, player_ptr, robot_ptr, person_ptr, mines, &mine_count, obstacle_ptr);
-            // Reset mines
-            for (int i = 0; i < mine_count; i++) {
-                clear_mines(&game, &mines[i], mine_count);
-            }
             break;
         }
-        // Update UI
-        update_UI(player_ptr, robot_ptr, person_ptr, mines, mine_count, &game);
-        // Refresh game window
-        wrefresh(game.field.window);
-        // Small delay to control game speed
-        usleep(delay);
-
-        // Wait for user input before exiting
-        nodelay(stdscr, FALSE); // Make getch() blocking
-        getch();
-
-        // free allocated memory and window
-        if (game.field.window != NULL) {
-            delwin(game.field.window);
-        }
-        free(obstacle_ptr);
-        free(mines);
-        free(player_ptr);
-        free(robot_ptr);
-        free(person_ptr);
-
-        // Cleanup and exit
-        endwin();
-        return 0;
     }
+    // free allocated memory and window
+    if (game.field.window != NULL) {
+        endwin();
+    }
+    free(obstacle_ptr);
+    free(mines);
+    free(player_ptr);
+    free(robot_ptr);
+    free(person_ptr);
+    // Cleanup and exit
+    endwin();
+    return 0;
 }

@@ -1,0 +1,1 @@
+/usr/bin/gcc -g CMakeFiles/Game.dir/game.c.o -o Game  -lncurses 

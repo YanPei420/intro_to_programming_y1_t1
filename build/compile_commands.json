@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/bryan/Documents/projects/intro_to_programming_y1_t1/build",
+  "command": "/usr/bin/gcc   -g -o CMakeFiles/Game.dir/game.c.o -c /home/bryan/Documents/projects/intro_to_programming_y1_t1/game.c",
+  "file": "/home/bryan/Documents/projects/intro_to_programming_y1_t1/game.c",
+  "output": "CMakeFiles/Game.dir/game.c.o"
+}
+]
