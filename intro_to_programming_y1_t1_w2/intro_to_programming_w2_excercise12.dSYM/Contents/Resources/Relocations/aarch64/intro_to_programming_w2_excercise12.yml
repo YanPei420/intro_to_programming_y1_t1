@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/yanpei/Documents/practice/intro_to_programming_w2_excercise12'
+relocations:     []
+...
