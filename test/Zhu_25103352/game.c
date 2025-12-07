@@ -935,7 +935,6 @@ int main() {
     int mine_count = 0;
     int delay      = 1000000;
 
-
     // Show title screen and get player name
     WINDOW* board = init_game(&game);
     draw_title_screen(player_ptr);
@@ -987,10 +986,10 @@ int main() {
             robot_ptr->direction = 0; // reset direction to 0
         }
         // Spawn additional mines and power-ups based on level
-        // if (player_ptr->level >= 3) {
-        //     Position power_up;
-        //     power_ups(player_ptr, &power_up, robot_ptr, person_ptr, mines, &mine_count);
-        // }
+        if (player_ptr->level >= 3) {
+            Position power_up;
+            power_ups(player_ptr, &power_up, robot_ptr, person_ptr, mines, &mine_count);
+        }
 
         // level up for every 5 points
         if (person_ptr->x == robot_ptr->pos.x && person_ptr->y == robot_ptr->pos.y) {

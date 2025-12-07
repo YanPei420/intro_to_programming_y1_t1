@@ -1,6 +1,6 @@
 
-#define BOARD_ROWS 20 // You are free to change this
-#define BOARD_COLS 50 // You are free to change this
+#define BOARD_ROWS 20 
+#define BOARD_COLS 50 
 #define MAX_NAME 20
 #define ROBOT_BODY 'o'
 #define ROBOT_HEAD '^'
@@ -12,7 +12,6 @@
 
 
 // Structs
-// Change as you see fit
 typedef struct {
     int x;
     int y;
@@ -37,8 +36,6 @@ typedef struct {
     int center_y;
 } CrossObstacle;
 
-
-// Other structs you could add such as Leaderboard, Game Settings, etc.
 typedef struct {
     int rows;
     int cols;
@@ -48,7 +45,6 @@ typedef struct {
 
 typedef struct {
     Field field;
-    // Add other fields from your full Game struct here
 } Game;
 
 typedef struct {

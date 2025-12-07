@@ -1,8 +1,8 @@
- 0
- 0
- 0
- 0
- 0
- 1
- 0
- 0
+asdfghjk 0
+asdfghjk, 1
+uyfgh 1
+rduytgfyug 2
+gchg 9
+jh 12
+ff 0
+h 4
